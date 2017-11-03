@@ -14,7 +14,7 @@ import junit.framework.TestCase;
 
 public class TestStockTradeContainer extends TestCase {
 
-	private final StockSymbol stockTea = new StockSymbol(StockConstants.STOCK1, StockTypeEnum.COMMON, 0, 0, 100);
+	private final StockSymbol stockTea = new StockSymbol(StockConstants.STOCK1, StockTypeEnum.COMMON, 100.0);
 
 	@Test
 	public void testGetSet() {

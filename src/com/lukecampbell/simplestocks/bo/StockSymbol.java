@@ -13,98 +13,22 @@ public class StockSymbol {
 
 	private String symbol;
 	private StockTypeEnum type;
-	private double lastDividend;
-	private double lastDividendPence;
-	private double fixedDividend;
-	private double parValue;
-	private double parValuePence;
 	private double marketPrice;
 
 	public StockSymbol() {
 		this.symbol = "";
 		this.type = StockTypeEnum.COMMON;
-		this.lastDividend = 0;
-		this.fixedDividend = 0 / 10;
-		this.parValue = 1;
 		this.marketPrice = 1;
-	}
-
-	public StockSymbol(String symbol, StockTypeEnum type, double lastDividend, double fixedDividend, double parValue, double market) {
-		super();
-		this.symbol = symbol;
-		this.type = type;
-		this.lastDividend = lastDividend;
-		this.fixedDividend = fixedDividend;
-		this.parValue = parValue;
-		this.marketPrice = market;
-	}
-
-	public StockSymbol(String symbol, StockTypeEnum type, double lastDiv, double fixedDiv, double parValue) {
-		this.symbol = symbol;
-		this.type = type;
-		this.lastDividend = lastDiv;
-		this.fixedDividend = fixedDiv;
-		this.parValue = parValue;
-		this.marketPrice = parValue;
 	}
 
 	public StockSymbol(String tradeSymbol, StockTypeEnum type, Double price) {
 		this.symbol = tradeSymbol;
 		this.type = type;
-		this.parValue = parValue;
-		this.marketPrice = parValue;
+		this.marketPrice = price;
 	}
 
-	public double getCommonDividendYield() throws IllegalArgumentException {
-		if (marketPrice == 0) {
-			throw new IllegalArgumentException("Market price is zero");
-		}
-		double yield = lastDividend / marketPrice;
+	
 
-		return yield;
-	}
-
-	public double getCommonDividendYieldForMarketPrice(double marketPriceCurrent) throws IllegalArgumentException {
-		if (marketPriceCurrent == 0) {
-			throw new IllegalArgumentException("Market price is zero");
-		}
-		double yield = lastDividend / marketPriceCurrent;
-		return yield;
-	}
-
-	public double getPreferredDividendYield() throws IllegalArgumentException {
-		if (marketPrice == 0) {
-			throw new IllegalArgumentException("Market price is zero");
-		}
-		double multiple = fixedDividend * parValue;
-		double yield = multiple / marketPrice;
-		return yield;
-	}
-
-	public double getPreferredDividendYieldForMarketPrice(double currentMarketPrice) throws IllegalArgumentException {
-		if (currentMarketPrice == 0) {
-			throw new IllegalArgumentException("Market price is zero");
-		}
-		double multiple = fixedDividend * parValue;
-		double yield = multiple / marketPrice;
-		return yield;
-	}
-
-	public double getProfitToEarningsRatio(double dividend) throws IllegalArgumentException {
-		if (dividend == 0) {
-			throw new IllegalArgumentException("Dividend is zero");
-		}
-		double ratio = marketPrice / dividend;
-		return ratio;
-	}
-
-	public double getProfitToEarningsRatioForMarketPrice(double suppliedMarketPrice) throws IllegalArgumentException {
-		if (lastDividend == 0) {
-			throw new IllegalArgumentException("lastDividend is zero");
-		}
-		double ratio = suppliedMarketPrice / lastDividend;
-		return ratio;
-	}
 
 	public double getGeometricMean(ArrayList<Double> prices) throws IllegalArgumentException {
 		Double meanValue = calculateGeometricMean(prices);
@@ -144,48 +68,12 @@ public class StockSymbol {
 		this.type = type;
 	}
 
-	public double getLastDividend() {
-		return lastDividend;
-	}
-
-	public void setLastDividend(double lastDividend) {
-		this.lastDividend = lastDividend;
-	}
-
-	public double getFixedDividend() {
-		return fixedDividend;
-	}
-
-	public void setFixedDividend(double fixedDividend) {
-		this.fixedDividend = fixedDividend;
-	}
-
-	public double getParValue() {
-		return parValue;
-	}
-
-	public void setParValue(double parValue) {
-		this.parValue = parValue;
-	}
-
 	public double getMarketPrice() {
 		return marketPrice;
 	}
 
 	public void setMarketPrice(double marketPrice) {
 		this.marketPrice = marketPrice;
-	}
-
-	public double getParValuePence() {
-		return parValue / 100;
-	}
-
-	public double getLastDividendPence() {
-		return lastDividend / 100;
-	}
-
-	public void setParValuePence(double parValuePence) {
-		this.parValuePence = parValuePence;
 	}
 
 	public boolean isType(int i) {
@@ -211,7 +99,6 @@ public class StockSymbol {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Stock: " + this.getSymbol());
-		sb.append(", parValue: " + this.getParValue());
 		sb.append(", marketPrice: " + this.getMarketPrice());
 		return sb.toString();
 	}

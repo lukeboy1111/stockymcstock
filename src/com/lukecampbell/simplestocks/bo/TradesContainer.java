@@ -1,9 +1,14 @@
 package com.lukecampbell.simplestocks.bo;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 // import java.time.LocalDateTime;
 // import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.logging.Logger;
+
+import com.lukecampbell.simplestocks.enums.BuyOrSell;
+import com.lukecampbell.simplestocks.support.StockConstants;
 
 public class TradesContainer {
 	private ArrayList<StockTradeContainer> trades;
@@ -94,6 +99,50 @@ public class TradesContainer {
 			}
 		}
 		return prices;
+	}
+
+	public boolean maxiumumTradeLevelReached() {
+		if(trades.size() >= StockConstants.MAX_BUFFER_TRADES) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	public Boolean reportableLevelReached() {
+		Integer size = StockConstants.REPORTABLE_NUMBER_TRADES;
+		while(size < StockConstants.MAX_BUFFER_TRADES) {
+			if(size == trades.size()) {
+				return true;
+			}
+			size += StockConstants.REPORTABLE_NUMBER_TRADES; 
+		}
+		return false;
+	}
+
+	public StringBuffer tradesReport() {
+		StringBuffer report = new StringBuffer();
+		for (StockTradeContainer trade : trades) {
+			StockSymbol stock = trade.getStockTraded();
+			report.append(stock.toString());
+			report.append(" - type=");
+			report.append(trade.getBuyOrSell().toString());
+			report.append(" - qty=");
+			report.append(trade.getQuantity());
+			report.append(" - Original Price=");
+			NumberFormat formatter = new DecimalFormat("#0.00");
+	        String price = formatter.format(trade.getPriceTraded());
+			report.append(price);
+			if(trade.hasAdjustment()) {
+				report.append(" - Adjusted Price=");
+				String adjustedPrice = formatter.format(trade.getAdjustedPrice());
+				report.append(adjustedPrice);
+			}
+			report.append("\n");
+		}
+		report.append("\n#trades: "+trades.size());
+		return report;
 	}
 
 }

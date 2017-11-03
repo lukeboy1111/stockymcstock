@@ -1,17 +1,24 @@
 package com.lukecampbell.simplestocks.bo;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Calendar;
 // import java.time.LocalDate;
 // import java.time.LocalDateTime;
 // import java.time.ZoneOffset;
 import java.util.Date;
 
+import com.lukecampbell.simplestocks.enums.AdjustmentType;
+import com.lukecampbell.simplestocks.enums.AdjustmentType.AdjustmentTypeEnum;
 import com.lukecampbell.simplestocks.enums.BuyOrSell;
 import com.lukecampbell.simplestocks.enums.BuyOrSell.BuySellEnum;
+import com.lukecampbell.simplestocks.exceptions.StockException;
+import com.lukecampbell.simplestocks.support.StockConstants;
 
 public class StockTradeContainer {
 	private StockSymbol stockTraded;
-	private double priceTraded;
+	private Double priceTraded;
+	private Double adjustedPrice;
 	private long quantity;
 	private Date dateOfTrade;
 	private String soldOrBought;
@@ -22,24 +29,17 @@ public class StockTradeContainer {
 
 	}
 
-	/*
-	 * public StockTradeContainer(StockSymbol stockTraded, double priceTraded,
-	 * long quantity, BuySellEnum buyOrSell, LocalDateTime dateOfTrade) {
-	 * super(); this.stockTraded = stockTraded; this.priceTraded = priceTraded;
-	 * this.quantity = quantity; this.dateOfTrade = dateOfTrade; this.buyOrSell
-	 * = buyOrSell; }
-	 */
-
-	public StockTradeContainer(StockSymbol stockTraded, double priceTraded, long quantity, BuySellEnum buyOrSell, Date dateOfTrade) {
+	public StockTradeContainer(StockSymbol stockTraded, Double priceTraded, long quantity, BuySellEnum buyOrSell, Date dateOfTrade) {
 		super();
 		this.stockTraded = stockTraded;
 		this.priceTraded = priceTraded;
 		this.quantity = quantity;
 		this.dateOfTrade = dateOfTrade;
 		this.buyOrSell = buyOrSell;
+		this.adjustedPrice = priceTraded;
 	}
 
-	public StockTradeContainer(StockSymbol stockTraded, double priceTraded, long quantity, BuySellEnum buyOrSell) {
+	public StockTradeContainer(StockSymbol stockTraded, Double priceTraded, long quantity, BuySellEnum buyOrSell) {
 		super();
 		this.stockTraded = stockTraded;
 		this.priceTraded = priceTraded;
@@ -47,6 +47,7 @@ public class StockTradeContainer {
 		Date rightNow = new Date();
 		this.dateOfTrade = rightNow;
 		this.buyOrSell = buyOrSell;
+		this.adjustedPrice = priceTraded;
 	}
 
 	public BuySellEnum getBuyOrSell() {
@@ -65,11 +66,11 @@ public class StockTradeContainer {
 		this.stockTraded = stockTraded;
 	}
 
-	public double getPriceTraded() {
+	public Double getPriceTraded() {
 		return priceTraded;
 	}
 
-	public void setPriceTraded(double priceTraded) {
+	public void setPriceTraded(Double priceTraded) {
 		this.priceTraded = priceTraded;
 	}
 
@@ -100,6 +101,14 @@ public class StockTradeContainer {
 	public void setSoldOrBought(String soldOrBought) {
 		this.soldOrBought = soldOrBought;
 	}
+	
+	public Double getAdjustedPrice() {
+		return adjustedPrice;
+	}
+
+	public void setAdjustedPrice(Double adjustedPrice) {
+		this.adjustedPrice = adjustedPrice;
+	}
 
 	public boolean isIncluded(Integer minutesMinus) {
 		Date currentDate = new Date();
@@ -113,6 +122,26 @@ public class StockTradeContainer {
 		return false;
 	}
 
+	public void adjust(AdjustmentTypeEnum adjustmentType, Double adjustment) throws StockException {
+		if(AdjustmentType.matches(StockConstants.STOCK_ADD, adjustmentType)) {
+			adjustedPrice += adjustment;
+		}
+		else if(AdjustmentType.matches(StockConstants.STOCK_SUBTRACT, adjustmentType)) {
+			adjustedPrice -= adjustment;
+		}
+		else if(AdjustmentType.matches(StockConstants.STOCK_MULTIPLY, adjustmentType)) {
+			adjustedPrice = priceTraded * adjustment;
+		}
+		else {
+			throw new StockException("Invalid Adjustment Type Received");
+		}
+		
+	}
+
+	public boolean hasAdjustment() {
+		return !(priceTraded == adjustedPrice);
+	}
+	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -124,9 +153,14 @@ public class StockTradeContainer {
 		} else {
 			sb.append(" (sold) ");
 		}
-		sb.append(", price: " + this.getPriceTraded());
+		NumberFormat formatter = new DecimalFormat("#0.00");
+        String price = formatter.format(this.getPriceTraded());
+		sb.append(", price: " + price);
+		if(hasAdjustment()) {
+			String adjustedPrice = formatter.format(this.getAdjustedPrice());
+			sb.append(", adjusted price: " + adjustedPrice);
+		}
 		sb.append(", qty: " + this.getQuantity());
-		sb.append(", date:" + this.getDateOfTrade().toString());
 		return sb.toString();
 	}
 

@@ -3,6 +3,7 @@ package com.lukecampbell.simplestocks.test.service;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.junit.After;
@@ -13,9 +14,8 @@ import com.lukecampbell.simplestocks.bo.StockMessage;
 import com.lukecampbell.simplestocks.bo.StockSymbol;
 import com.lukecampbell.simplestocks.bo.StockTradeContainer;
 import com.lukecampbell.simplestocks.bo.TradesContainer;
-import com.lukecampbell.simplestocks.enums.BuyOrSell.BuySellEnum;
-import com.lukecampbell.simplestocks.enums.StockType.StockTypeEnum;
-import com.lukecampbell.simplestocks.exceptions.CannotCalculateException;
+import com.lukecampbell.simplestocks.enums.AdjustmentType.AdjustmentTypeEnum;
+import com.lukecampbell.simplestocks.exceptions.StockException;
 import com.lukecampbell.simplestocks.service.ServiceLocator;
 import com.lukecampbell.simplestocks.service.iface.IStockService;
 import com.lukecampbell.simplestocks.support.StockConstants;
@@ -25,66 +25,312 @@ import junit.framework.*;
 public class TestStockService extends TestCase {
 	private Logger LOGGER = Logger.getLogger(TradesContainer.class.getName());
 
-	private final IStockService stockService = ServiceLocator.getStockService();
+	private IStockService stockService;
 	private ArrayList<StockSymbol> stockSymbols;
-	private StockSymbol stockTea = new StockSymbol(StockConstants.STOCK1, StockTypeEnum.COMMON, 0, 0, 100);
-	private StockSymbol stockPop = new StockSymbol(StockConstants.STOCK2, StockTypeEnum.COMMON, 8, 0, 100);
-	private StockSymbol stockAle = new StockSymbol(StockConstants.STOCK3, StockTypeEnum.COMMON, 23, 0, 60);
-	private StockSymbol stockGin = new StockSymbol(StockConstants.STOCK4, StockTypeEnum.PREFERRED, 8, 0.02, 100);
-	private StockSymbol stockJoe = new StockSymbol(StockConstants.STOCK5, StockTypeEnum.COMMON, 13, 0, 250);
-
+	
 	private double popPrice = 104.5;
-	private double popPrice2 = 103.5;
-	private double alePrice = 110;
-	private double ginPrice = 130;
-	private double ginPriceSell = 131.5;
-	private double joePrice = 101;
-	private double joePriceLarge = 103.76;
-	private double expectedWeightedPrice = 0;
-
+	
 	@Before
 	public void setUp() {
-		stockSymbols = new ArrayList<StockSymbol>();
-		stockSymbols.add(stockTea);
-		stockSymbols.add(stockPop);
-		stockSymbols.add(stockAle);
-		stockSymbols.add(stockGin);
-		stockSymbols.add(stockJoe);
-		stockService.addAllStocksToCollection(stockSymbols);
+		// before each test we want to re-initialise the stock service.
+		// If we wanted to do this for all tests (ie just once), we could use a @BeforeClass annotation.
+		stockService = ServiceLocator.getStockService();
 	}
 
 	@After
 	public void tearDown() {
 
 	}
-
+	
 	@Test
-	public void testAddTrades() {
+	public void testAddOneTrade() {
 
-		int size = stockSymbols.size();
-		int expected = 5;
-		assertEquals(expected, size);
+		
+		StockMessage outcome;
+		try {
+			outcome = stockService.message(StockConstants.STOCK1, 101.5);
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+	}
+	
+	
+	
+	@Test
+	public void testAddTrades() {		
+		StockMessage outcome;
+		
+		try {
+			int i;
+			for(i = 0; i < StockConstants.REPORTABLE_NUMBER_TRADES-1; i++) {
+				outcome = stockService.message(StockConstants.STOCK2, popPrice);
+				assertTrue(outcome.getSuccess());
+				assertFalse(outcome.getIsReportable());
+			}
+			outcome = stockService.message(StockConstants.STOCK2, popPrice);
+			assertTrue(outcome.getSuccess());
+			assertTrue(outcome.getIsReportable());
+			Integer numberTrades = stockService.numberOfTrades();
+			Integer expectedTrades = StockConstants.REPORTABLE_NUMBER_TRADES;
+			assertEquals(expectedTrades, numberTrades);
+			for(i = 0; i < StockConstants.REPORTABLE_NUMBER_TRADES-1; i++) {
+				outcome = stockService.message(StockConstants.STOCK2, popPrice);
+				assertTrue(outcome.getSuccess());
+				assertFalse(outcome.getIsReportable());
+			}
+			outcome = stockService.message(StockConstants.STOCK2, popPrice);
+			assertTrue(outcome.getSuccess());
+			assertTrue(outcome.getIsReportable());
+			outcome = stockService.message(StockConstants.STOCK2, popPrice);
+			assertTrue(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+			
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+	}
+	
+	@Test(expected = StockException.class)
+	public void testAddFiftyOneTradesException() {
+		// we are expecting this to fail with a StockException
+		try {
+			for(int i = 0; i < StockConstants.MAX_BUFFER_TRADES; i++) {
+				StockMessage outcome = stockService.message(StockConstants.STOCK2, popPrice);
+				assertTrue(outcome.getSuccess());
+			}
+			Integer numberTrades = stockService.numberOfTrades();
+			Integer expectedTrades = StockConstants.MAX_BUFFER_TRADES;
+			assertEquals(expectedTrades, numberTrades);
+			
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		
+		try {
+			StockMessage outcome = stockService.message(StockConstants.STOCK2, popPrice);
+			fail("This test didn't throw an exception");
+		} catch (StockException e) {
+			
+		}
+		
+		
+	}
+	
+	@Test(expected = StockException.class)
+	public void testAddFiftyOneTradesWithMultiplesException() {
 
-		int collectionSize = stockService.numberStocksInCollection();
-		assertEquals(expected, collectionSize);
-		StockMessage outcome = stockService.message(StockConstants.STOCK1, 101.5);
+		try {
+			for(int i = 0; i < StockConstants.MAX_BUFFER_TRADES; i++) {
+				StockMessage outcome = stockService.message(StockConstants.STOCK2, popPrice, new Long(10));
+				assertTrue(outcome.getSuccess());
+			}
+			Integer numberTrades = stockService.numberOfTrades();
+			Integer expectedTrades = StockConstants.MAX_BUFFER_TRADES;
+			assertEquals(expectedTrades, numberTrades);
+			
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
 		
-		Calendar cal = Calendar.getInstance();
-		Date rightNow = cal.getTime();
-		cal.add(Calendar.HOUR, -1);
-		Date rightNowMinusAnHour = cal.getTime();
+		try {
+			StockMessage outcome = stockService.message(StockConstants.STOCK2, popPrice, new Long(10));
+			fail("This test didn't throw an exception");
+		} catch (StockException e) {
+			
+		}
+		
+		
+	}
+	
+	@Test
+	public void testAdjustedAddTradeChangesPrice() {
+		StockMessage outcome;
+		try {
+			outcome = stockService.message(StockConstants.STOCK1, 100.0);
+			assertTrue(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		Double adjustment = 0.01;
+		try {
+			outcome = stockService.message(StockConstants.STOCK1, AdjustmentTypeEnum.ADD, adjustment );
+			assertTrue(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		List<StockTradeContainer> trades = stockService.getTradesList();
+		Integer expectedSize = 1;
+		Integer size = trades.size();
+		assertEquals(expectedSize, size);
+		for(StockTradeContainer trade: trades) {
+			StockSymbol stock = trade.getStockTraded();
+			Double priceTraded = trade.getPriceTraded();
+			Double priceAdjusted = trade.getAdjustedPrice();
+			Double expectedPrice = 100.01;
+			assertNotSame(priceTraded, priceAdjusted);
+			assertEquals(expectedPrice, priceAdjusted);
+		}
+	}
+	
+	@Test
+	public void testAdjustedMinusTradeChangesPrice() {
+		StockMessage outcome;
+		try {
+			outcome = stockService.message(StockConstants.STOCK1, 100.0);
+			assertTrue(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		Double adjustment = 0.01;
+		try {
+			outcome = stockService.message(StockConstants.STOCK1, AdjustmentTypeEnum.SUBTRACT, adjustment );
+			assertTrue(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		List<StockTradeContainer> trades = stockService.getTradesList();
+		Integer expectedSize = 1;
+		Integer size = trades.size();
+		assertEquals(expectedSize, size);
+		for(StockTradeContainer trade: trades) {
+			StockSymbol stock = trade.getStockTraded();
+			Double priceTraded = trade.getPriceTraded();
+			Double priceAdjusted = trade.getAdjustedPrice();
+			Double expectedPrice = 99.99;
+			assertNotSame(priceTraded, priceAdjusted);
+			assertEquals(expectedPrice, priceAdjusted);
+		}
+	}
 
-		outcome = stockService.message(StockConstants.STOCK2, popPrice);
-		outcome = stockService.message(StockConstants.STOCK2, popPrice);
-		outcome = stockService.message(StockConstants.STOCK2, popPrice);
-		outcome = stockService.message(StockConstants.STOCK2, popPrice);
-		outcome = stockService.message(StockConstants.STOCK2, popPrice);
-		outcome = stockService.message(StockConstants.STOCK2, popPrice);
-		outcome = stockService.message(StockConstants.STOCK2, popPrice);
-		outcome = stockService.message(StockConstants.STOCK2, popPrice);
-		
-		
-		
+	
+	@Test
+	public void testAdjustedMultiplyTradeChangesPrice() {
+		StockMessage outcome;
+		try {
+			outcome = stockService.message(StockConstants.STOCK1, 100.0);
+			assertTrue(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		Double adjustment = 0.01;
+		try {
+			outcome = stockService.message(StockConstants.STOCK1, AdjustmentTypeEnum.MULTIPLY, adjustment );
+			assertTrue(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		List<StockTradeContainer> trades = stockService.getTradesList();
+		Integer expectedSize = 1;
+		Integer size = trades.size();
+		assertEquals(expectedSize, size);
+		for(StockTradeContainer trade: trades) {
+			StockSymbol stock = trade.getStockTraded();
+			Double priceTraded = trade.getPriceTraded();
+			Double priceAdjusted = trade.getAdjustedPrice();
+			Double expectedPrice = 1.0;
+			assertNotSame(priceTraded, priceAdjusted);
+			assertEquals(expectedPrice, priceAdjusted);
+		}
+	}
+
+	
+	@Test
+	public void testAdjustedAddTradeForNothingMatchingSoTradeOutComeWillBeFalseAndPriceStaysSame() {
+
+		StockMessage outcome;
+		try {
+			outcome = stockService.message(StockConstants.STOCK1, 100.0);
+			assertTrue(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		Double adjustment = 0.01;
+		try {
+			outcome = stockService.message(StockConstants.STOCK2, AdjustmentTypeEnum.ADD, adjustment );
+			assertFalse(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		List<StockTradeContainer> trades = stockService.getTradesList();
+		Integer expectedSize = 1;
+		Integer size = trades.size();
+		assertEquals(expectedSize, size);
+		for(StockTradeContainer trade: trades) {
+			StockSymbol stock = trade.getStockTraded();
+			Double priceTraded = trade.getPriceTraded();
+			Double priceAdjusted = trade.getAdjustedPrice();
+			assertEquals(priceTraded, priceAdjusted);
+		}
+	}
+	
+	@Test
+	public void testAdjustedSubtractTradeForNothingMatchingSoTradeOutComeWillBeFalseAndPriceStaysSame() {
+
+		StockMessage outcome;
+		try {
+			outcome = stockService.message(StockConstants.STOCK1, 100.0);
+			assertTrue(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		Double adjustment = 0.01;
+		try {
+			outcome = stockService.message(StockConstants.STOCK2, AdjustmentTypeEnum.SUBTRACT, adjustment );
+			assertFalse(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		List<StockTradeContainer> trades = stockService.getTradesList();
+		Integer expectedSize = 1;
+		Integer size = trades.size();
+		assertEquals(expectedSize, size);
+		for(StockTradeContainer trade: trades) {
+			StockSymbol stock = trade.getStockTraded();
+			Double priceTraded = trade.getPriceTraded();
+			Double priceAdjusted = trade.getAdjustedPrice();
+			assertEquals(priceTraded, priceAdjusted);
+		}
+	}
+	
+	@Test
+	public void testAdjustedMultiplyTradeForNothingMatchingSoTradeOutComeWillBeFalseAndPriceStaysSame() {
+
+		StockMessage outcome;
+		try {
+			outcome = stockService.message(StockConstants.STOCK1, 100.0);
+			assertTrue(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		Double adjustment = 0.01;
+		try {
+			outcome = stockService.message(StockConstants.STOCK2, AdjustmentTypeEnum.MULTIPLY, adjustment );
+			assertFalse(outcome.getSuccess());
+			assertFalse(outcome.getIsReportable());
+		} catch (StockException e) {
+			fail("Unexpected stock exception");
+		}
+		List<StockTradeContainer> trades = stockService.getTradesList();
+		Integer expectedSize = 1;
+		Integer size = trades.size();
+		assertEquals(expectedSize, size);
+		for(StockTradeContainer trade: trades) {
+			StockSymbol stock = trade.getStockTraded();
+			Double priceTraded = trade.getPriceTraded();
+			Double priceAdjusted = trade.getAdjustedPrice();
+			assertEquals(priceTraded, priceAdjusted);
+		}
 	}
 
 }

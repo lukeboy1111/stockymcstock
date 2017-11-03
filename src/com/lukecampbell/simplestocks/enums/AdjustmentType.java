@@ -13,7 +13,7 @@ public class AdjustmentType {
 	 *            the this service
 	 * @return the boolean
 	 */
-	public static Boolean matches(Integer statusReceived, StockTypeEnum thisService) {
+	public static Boolean matches(Integer statusReceived, AdjustmentTypeEnum thisService) {
 		Integer thisStatus = thisService.getValue();
 		if (thisStatus == statusReceived) {
 			return true;
@@ -31,7 +31,7 @@ public class AdjustmentType {
 	 *            the this service
 	 * @return the boolean
 	 */
-	public static Boolean matches(int statusReceived, StockTypeEnum thisService) {
+	public static Boolean matches(int statusReceived, AdjustmentTypeEnum thisService) {
 		int thisStatus = thisService.getValue();
 		if (thisStatus == statusReceived) {
 			return true;
@@ -41,9 +41,9 @@ public class AdjustmentType {
 	}
 
 	/**
-	 * The Enum StockTypeEnum.
+	 * The Enum AdjustmentTypeEnum.
 	 */
-	public enum StockTypeEnum {
+	public enum AdjustmentTypeEnum {
 		
 		/** Common Stock. */
 		ADD(StockConstants.STOCK_ADD),
@@ -57,7 +57,7 @@ public class AdjustmentType {
 		private final int value;
 
 		
-		StockTypeEnum(final Integer newValue) {
+		AdjustmentTypeEnum(final Integer newValue) {
 			value = newValue;
 		}
 
