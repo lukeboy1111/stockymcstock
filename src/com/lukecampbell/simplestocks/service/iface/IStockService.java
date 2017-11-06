@@ -1,6 +1,7 @@
 package com.lukecampbell.simplestocks.service.iface;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -13,9 +14,9 @@ import com.lukecampbell.simplestocks.exceptions.StockException;
 
 public interface IStockService {
 	
-	public abstract StockMessage message(String tradeSymbol, Double price) throws StockException;
+	public abstract Optional<StockMessage> message(String tradeSymbol, Double price);
 	
-	public abstract StockMessage message(String tradeSymbol, Double price, Long qty) throws StockException;
+	public abstract Optional<StockMessage> message(String tradeSymbol, Double price, Long qty);
 	
 	public abstract StockMessage message(String tradeSymbol, AdjustmentTypeEnum adjustmentType, Double adjustment) throws StockException;
 	

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 
@@ -61,7 +62,7 @@ public class StockService implements IStockService {
 	private void maxiumumTradeLevelReachedCheck() throws StockException {
 		
 		if(trades.maxiumumTradeLevelReached()) {
-			throw new StockException("No More Trades Are Being Accepted");
+			throw new StockException(StockConstants.NO_MORE_TRADES);
 		}
 		
 	}
@@ -72,31 +73,25 @@ public class StockService implements IStockService {
 	}
 
 	@Override
-	public StockMessage message(String tradeSymbol, Double price) throws StockException {
+	public Optional<StockMessage> message(String tradeSymbol, Double price) {
 		return message(tradeSymbol, price, new Long(1));
 	}
 
 	@Override
-	public StockMessage message(String tradeSymbol, Double price, Long qty) throws StockException {
-		StockSymbol stockTea = new StockSymbol(tradeSymbol, StockTypeEnum.COMMON, price);
-		maxiumumTradeLevelReachedCheck();
-		StockMessage response = new StockMessage();
-		
+	public Optional<StockMessage> message(String tradeSymbol, Double price, Long qty) {
 		try {
-			recordTradeWithoutDate(stockTea, qty, BuySellEnum.BUY, price);
-			response.setSuccess(true);
-			response.setStock(stockTea);
-			response.setPrice(price);
-			Boolean reportable = checkReportableLevel();
-			response.setIsReportable(reportable);
-			if(reportable) {
-				response.setReport(trades.tradesReport());
-			}
-			
+			StockMessage stock = processMessage(tradeSymbol, price, qty);
+			return Optional.of(stock);
 		} catch (StockException e) {
-			response.setSuccess(false);
+			if(e.getMessage().equals(StockConstants.NO_MORE_TRADES)) {
+				StockMessage stock = new StockMessage();
+				stock.setSuccess(false);
+				stock.setMessage(e.getMessage());
+				return Optional.of(stock);
+			}
+			return Optional.empty();
 		}
-		return response;
+		
 	}
 	
 	private StockMessage processMessage(String tradeSymbol, Double price, Long qty) throws StockException {
@@ -117,6 +112,7 @@ public class StockService implements IStockService {
 			
 		} catch (StockException e) {
 			response.setSuccess(false);
+			response.setMessage(e.getMessage());
 		}
 		return response;
 	}

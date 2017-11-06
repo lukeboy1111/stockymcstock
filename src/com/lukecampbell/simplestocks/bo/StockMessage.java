@@ -2,6 +2,7 @@ package com.lukecampbell.simplestocks.bo;
 
 public class StockMessage {
 	private Boolean success;
+	private String message;
 	private StockSymbol stock;
 	private Double price;
 	private Boolean isReportable;
@@ -52,6 +53,14 @@ public class StockMessage {
 	}
 	public void setReport(StringBuffer report) {
 		this.report = report;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
 	}
 	
 	

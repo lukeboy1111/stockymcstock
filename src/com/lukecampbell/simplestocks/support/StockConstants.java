@@ -31,4 +31,5 @@ public class StockConstants {
 	
 	public static final Integer REPORTABLE_NUMBER_TRADES = 10;
 	public static final Integer MAX_BUFFER_TRADES = 50;
+	public static final String NO_MORE_TRADES = "No More Trades Are Being Accepted";
 }

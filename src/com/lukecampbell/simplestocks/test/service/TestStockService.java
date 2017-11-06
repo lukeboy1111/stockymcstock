@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.junit.After;
@@ -46,72 +47,72 @@ public class TestStockService extends TestCase {
 	public void testAddOneTrade() {
 
 		
-		StockMessage outcome;
-		try {
-			outcome = stockService.message(StockConstants.STOCK1, 101.5);
-		} catch (StockException e) {
-			fail("Unexpected stock exception");
-		}
+		Optional<StockMessage> outcome;
+		outcome = stockService.message(StockConstants.STOCK1, 101.5);
+		assertTrue(outcome.isPresent());
+		assertTrue(outcome.get().getSuccess());
+		assertFalse(outcome.get().getIsReportable());
 	}
 	
 	
 	
 	@Test
 	public void testAddTrades() {		
-		StockMessage outcome;
+		Optional<StockMessage> outcome;
 		
-		try {
-			int i;
-			for(i = 0; i < StockConstants.REPORTABLE_NUMBER_TRADES-1; i++) {
-				outcome = stockService.message(StockConstants.STOCK2, popPrice);
-				assertTrue(outcome.getSuccess());
-				assertFalse(outcome.getIsReportable());
-			}
-			outcome = stockService.message(StockConstants.STOCK2, popPrice);
-			assertTrue(outcome.getSuccess());
-			assertTrue(outcome.getIsReportable());
-			Integer numberTrades = stockService.numberOfTrades();
-			Integer expectedTrades = StockConstants.REPORTABLE_NUMBER_TRADES;
-			assertEquals(expectedTrades, numberTrades);
-			for(i = 0; i < StockConstants.REPORTABLE_NUMBER_TRADES-1; i++) {
-				outcome = stockService.message(StockConstants.STOCK2, popPrice);
-				assertTrue(outcome.getSuccess());
-				assertFalse(outcome.getIsReportable());
-			}
-			outcome = stockService.message(StockConstants.STOCK2, popPrice);
-			assertTrue(outcome.getSuccess());
-			assertTrue(outcome.getIsReportable());
-			outcome = stockService.message(StockConstants.STOCK2, popPrice);
-			assertTrue(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
-			
-		} catch (StockException e) {
-			fail("Unexpected stock exception");
+		
+		int i;
+		for(i = 0; i < StockConstants.REPORTABLE_NUMBER_TRADES-1; i++) {
+				
+			outcome = stockService.message(StockConstants.STOCK1, 101.5);
+			assertTrue(outcome.isPresent());
+			assertTrue(outcome.get().getSuccess());
+			assertFalse(outcome.get().getIsReportable());
 		}
+		outcome = stockService.message(StockConstants.STOCK2, popPrice);
+		assertTrue(outcome.isPresent());
+		assertTrue(outcome.get().getSuccess());
+		assertTrue(outcome.get().getIsReportable());
+			
+		Integer numberTrades = stockService.numberOfTrades();
+		Integer expectedTrades = StockConstants.REPORTABLE_NUMBER_TRADES;
+		assertEquals(expectedTrades, numberTrades);
+		for(i = 0; i < StockConstants.REPORTABLE_NUMBER_TRADES-1; i++) {
+			outcome = stockService.message(StockConstants.STOCK1, 101.5);
+			assertTrue(outcome.isPresent());
+			assertTrue(outcome.get().getSuccess());
+			assertFalse(outcome.get().getIsReportable());
+		}
+		outcome = stockService.message(StockConstants.STOCK2, popPrice);
+		assertTrue(outcome.isPresent());
+		assertTrue(outcome.get().getSuccess());
+		assertTrue(outcome.get().getIsReportable());
+		outcome = stockService.message(StockConstants.STOCK2, popPrice);
+		assertTrue(outcome.isPresent());
+		assertTrue(outcome.get().getSuccess());
+		assertFalse(outcome.get().getIsReportable());
+			
+		
 	}
 	
 	@Test(expected = StockException.class)
 	public void testAddFiftyOneTradesException() {
 		// we are expecting this to fail with a StockException
-		try {
+		
 			for(int i = 0; i < StockConstants.MAX_BUFFER_TRADES; i++) {
-				StockMessage outcome = stockService.message(StockConstants.STOCK2, popPrice);
-				assertTrue(outcome.getSuccess());
+				Optional<StockMessage> outcome = stockService.message(StockConstants.STOCK2, popPrice);
+				assertTrue(outcome.isPresent());
+				assertTrue(outcome.get().getSuccess());
 			}
 			Integer numberTrades = stockService.numberOfTrades();
 			Integer expectedTrades = StockConstants.MAX_BUFFER_TRADES;
 			assertEquals(expectedTrades, numberTrades);
 			
-		} catch (StockException e) {
-			fail("Unexpected stock exception");
-		}
-		
-		try {
-			StockMessage outcome = stockService.message(StockConstants.STOCK2, popPrice);
-			fail("This test didn't throw an exception");
-		} catch (StockException e) {
+			Optional<StockMessage> outcome = stockService.message(StockConstants.STOCK2, popPrice);
+			assertTrue(outcome.isPresent());
+			assertFalse(outcome.get().getSuccess());
+			assertEquals(StockConstants.NO_MORE_TRADES, outcome.get().getMessage());
 			
-		}
 		
 		
 	}
@@ -119,47 +120,45 @@ public class TestStockService extends TestCase {
 	@Test(expected = StockException.class)
 	public void testAddFiftyOneTradesWithMultiplesException() {
 
-		try {
-			for(int i = 0; i < StockConstants.MAX_BUFFER_TRADES; i++) {
-				StockMessage outcome = stockService.message(StockConstants.STOCK2, popPrice, new Long(10));
-				assertTrue(outcome.getSuccess());
-			}
-			Integer numberTrades = stockService.numberOfTrades();
-			Integer expectedTrades = StockConstants.MAX_BUFFER_TRADES;
-			assertEquals(expectedTrades, numberTrades);
-			
-		} catch (StockException e) {
-			fail("Unexpected stock exception");
-		}
 		
-		try {
-			StockMessage outcome = stockService.message(StockConstants.STOCK2, popPrice, new Long(10));
-			fail("This test didn't throw an exception");
-		} catch (StockException e) {
-			
+		for(int i = 0; i < StockConstants.MAX_BUFFER_TRADES; i++) {
+			Optional<StockMessage> outcome = stockService.message(StockConstants.STOCK2, popPrice);
+			assertTrue(outcome.isPresent());
+			assertTrue(outcome.get().getSuccess());
 		}
+		Integer numberTrades = stockService.numberOfTrades();
+		Integer expectedTrades = StockConstants.MAX_BUFFER_TRADES;
+		assertEquals(expectedTrades, numberTrades);
+			
+		
+		
+		Optional<StockMessage> outcome = stockService.message(StockConstants.STOCK2, popPrice);
+		assertTrue(outcome.isPresent());
+		assertFalse(outcome.get().getSuccess());
+		assertEquals(StockConstants.NO_MORE_TRADES, outcome.get().getMessage());
 		
 		
 	}
 	
 	@Test
 	public void testAdjustedAddTradeChangesPrice() {
-		StockMessage outcome;
-		try {
-			outcome = stockService.message(StockConstants.STOCK1, 100.0);
-			assertTrue(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
-		} catch (StockException e) {
-			fail("Unexpected stock exception");
-		}
+		
+		Optional<StockMessage> outcome = stockService.message(StockConstants.STOCK1, 100.0);
+		assertTrue(outcome.isPresent());
+		assertTrue(outcome.get().getSuccess());
+		assertFalse(outcome.get().getIsReportable());
+		
 		Double adjustment = 0.01;
+		
 		try {
-			outcome = stockService.message(StockConstants.STOCK1, AdjustmentTypeEnum.ADD, adjustment );
-			assertTrue(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
-		} catch (StockException e) {
-			fail("Unexpected stock exception");
+			StockMessage outcomeOfAdjustment = stockService.message(StockConstants.STOCK1, AdjustmentTypeEnum.ADD, adjustment );
+			assertTrue(outcomeOfAdjustment.getSuccess());
+			assertFalse(outcomeOfAdjustment.getIsReportable());
 		}
+		catch(StockException e) {
+			fail("Unexpected Error");
+		}
+		
 		List<StockTradeContainer> trades = stockService.getTradesList();
 		Integer expectedSize = 1;
 		Integer size = trades.size();
@@ -176,22 +175,21 @@ public class TestStockService extends TestCase {
 	
 	@Test
 	public void testAdjustedMinusTradeChangesPrice() {
-		StockMessage outcome;
-		try {
-			outcome = stockService.message(StockConstants.STOCK1, 100.0);
-			assertTrue(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
-		} catch (StockException e) {
-			fail("Unexpected stock exception");
-		}
+		Optional<StockMessage> outcome;
+		outcome = stockService.message(StockConstants.STOCK1, 100.0);
+		assertTrue(outcome.isPresent());
+		assertTrue(outcome.get().getSuccess());
+		assertFalse(outcome.get().getIsReportable());
+		
 		Double adjustment = 0.01;
 		try {
-			outcome = stockService.message(StockConstants.STOCK1, AdjustmentTypeEnum.SUBTRACT, adjustment );
-			assertTrue(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
+			StockMessage outcomeAdjustment = stockService.message(StockConstants.STOCK1, AdjustmentTypeEnum.SUBTRACT, adjustment );
+			assertTrue(outcomeAdjustment.getSuccess());
+			assertFalse(outcomeAdjustment.getIsReportable());
 		} catch (StockException e) {
 			fail("Unexpected stock exception");
 		}
+		
 		List<StockTradeContainer> trades = stockService.getTradesList();
 		Integer expectedSize = 1;
 		Integer size = trades.size();
@@ -209,19 +207,17 @@ public class TestStockService extends TestCase {
 	
 	@Test
 	public void testAdjustedMultiplyTradeChangesPrice() {
-		StockMessage outcome;
-		try {
-			outcome = stockService.message(StockConstants.STOCK1, 100.0);
-			assertTrue(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
-		} catch (StockException e) {
-			fail("Unexpected stock exception");
-		}
+		Optional<StockMessage> outcome;
+		outcome = stockService.message(StockConstants.STOCK1, 100.0);
+		assertTrue(outcome.isPresent());
+		assertTrue(outcome.get().getSuccess());
+		assertFalse(outcome.get().getIsReportable());
+		
 		Double adjustment = 0.01;
 		try {
-			outcome = stockService.message(StockConstants.STOCK1, AdjustmentTypeEnum.MULTIPLY, adjustment );
-			assertTrue(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
+			StockMessage outcomeAdjustment = stockService.message(StockConstants.STOCK1, AdjustmentTypeEnum.MULTIPLY, adjustment );
+			assertTrue(outcomeAdjustment.getSuccess());
+			assertFalse(outcomeAdjustment.getIsReportable());
 		} catch (StockException e) {
 			fail("Unexpected stock exception");
 		}
@@ -243,22 +239,21 @@ public class TestStockService extends TestCase {
 	@Test
 	public void testAdjustedAddTradeForNothingMatchingSoTradeOutComeWillBeFalseAndPriceStaysSame() {
 
-		StockMessage outcome;
-		try {
-			outcome = stockService.message(StockConstants.STOCK1, 100.0);
-			assertTrue(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
-		} catch (StockException e) {
-			fail("Unexpected stock exception");
-		}
+		Optional<StockMessage> outcome;
+		outcome = stockService.message(StockConstants.STOCK1, 100.0);
+		assertTrue(outcome.isPresent());
+		assertTrue(outcome.get().getSuccess());
+		assertFalse(outcome.get().getIsReportable());
+		
 		Double adjustment = 0.01;
 		try {
-			outcome = stockService.message(StockConstants.STOCK2, AdjustmentTypeEnum.ADD, adjustment );
-			assertFalse(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
+			StockMessage outcomeAdjustment = stockService.message(StockConstants.STOCK2, AdjustmentTypeEnum.ADD, adjustment );
+			assertFalse(outcomeAdjustment.getSuccess());
+			assertFalse(outcomeAdjustment.getIsReportable());
 		} catch (StockException e) {
 			fail("Unexpected stock exception");
 		}
+		
 		List<StockTradeContainer> trades = stockService.getTradesList();
 		Integer expectedSize = 1;
 		Integer size = trades.size();
@@ -274,19 +269,17 @@ public class TestStockService extends TestCase {
 	@Test
 	public void testAdjustedSubtractTradeForNothingMatchingSoTradeOutComeWillBeFalseAndPriceStaysSame() {
 
-		StockMessage outcome;
-		try {
-			outcome = stockService.message(StockConstants.STOCK1, 100.0);
-			assertTrue(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
-		} catch (StockException e) {
-			fail("Unexpected stock exception");
-		}
+		Optional<StockMessage> outcome;
+		outcome = stockService.message(StockConstants.STOCK1, 100.0);
+		assertTrue(outcome.isPresent());
+		assertTrue(outcome.get().getSuccess());
+		assertFalse(outcome.get().getIsReportable());
+		
 		Double adjustment = 0.01;
 		try {
-			outcome = stockService.message(StockConstants.STOCK2, AdjustmentTypeEnum.SUBTRACT, adjustment );
-			assertFalse(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
+			StockMessage outcomeAdjustment = stockService.message(StockConstants.STOCK2, AdjustmentTypeEnum.SUBTRACT, adjustment );
+			assertFalse(outcomeAdjustment.getSuccess());
+			assertFalse(outcomeAdjustment.getIsReportable());
 		} catch (StockException e) {
 			fail("Unexpected stock exception");
 		}
@@ -305,22 +298,21 @@ public class TestStockService extends TestCase {
 	@Test
 	public void testAdjustedMultiplyTradeForNothingMatchingSoTradeOutComeWillBeFalseAndPriceStaysSame() {
 
-		StockMessage outcome;
-		try {
-			outcome = stockService.message(StockConstants.STOCK1, 100.0);
-			assertTrue(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
-		} catch (StockException e) {
-			fail("Unexpected stock exception");
-		}
+		Optional<StockMessage> outcome;
+		outcome = stockService.message(StockConstants.STOCK1, 100.0);
+		assertTrue(outcome.isPresent());
+		assertTrue(outcome.get().getSuccess());
+		assertFalse(outcome.get().getIsReportable());
+		
 		Double adjustment = 0.01;
 		try {
-			outcome = stockService.message(StockConstants.STOCK2, AdjustmentTypeEnum.MULTIPLY, adjustment );
-			assertFalse(outcome.getSuccess());
-			assertFalse(outcome.getIsReportable());
+			StockMessage outcomeAdjustment = stockService.message(StockConstants.STOCK2, AdjustmentTypeEnum.MULTIPLY, adjustment );
+			assertFalse(outcomeAdjustment.getSuccess());
+			assertFalse(outcomeAdjustment.getIsReportable());
 		} catch (StockException e) {
 			fail("Unexpected stock exception");
 		}
+		
 		List<StockTradeContainer> trades = stockService.getTradesList();
 		Integer expectedSize = 1;
 		Integer size = trades.size();
